@@ -4,20 +4,20 @@ title: Transactions
 sidebar_label: Overview
 ---
 
-NEAR is asynchronous by design. While it opens a wide range of possibilities for smart contracts implementations, it may also add to confusion among beginners and newcomers from other blockchain platforms.
-Transactions in NEAR may contain actions that do asynchronous work, in such cases keep in mind the possible outcomes of success or failure of the transaction. For example, if a transaction contains a cross-contract call, it may be marked as successful, but the other contract execution might fail. This article covers possible scenarios for this.
+NEAR is asynchronous by design. While it opens a wide range of possibilities for smart contract implementations, it may also cause confusion among beginners and newcomers from other blockchain platforms.
+Transactions in NEAR may contain actions that do asynchronous work, in such cases keep in mind the possible outcomes of success (resolve) or failure (reject) of the transaction. For example, if a transaction contains a cross-contract call, it may be marked as successful, but the other contract execution might fail. This article covers possible scenarios for this.
 
-A transaction is the smallest unit of work that can be assigned to the network. "Work" in this case means compute (executing a function) or storage (reading/writing data). A transaction is composed of one or more `Action`s. A transaction with more than one action is referred to as a "batch transaction". Since transactions are the smallest units of work, they are also atomic, but again, asynchronous actions do not necessarily cascade their success or failure the whole transaction.
+A transaction is the smallest unit of work that can be assigned to the network. "Work" in this case means compute (executing a function) or storage (reading/writing data). A transaction is composed of one or more `Action`s. A transaction with more than one action is referred to as a "batch transaction". Since transactions are the smallest units of work, they are also atomic, but again, asynchronous actions do not necessarily cascade their success or failure through the whole transaction.
 
-There is also a concept of `Receipt`, which is either "request to apply an `Action`" or "result of the `Action`". All cross-contract communication is done through receipts. An action may result in one or more receipts. The Blockchain may be seen as a series of Transactions, but it's also a series of Receipts. 
+There is also a concept of `Receipt`, which is either a "request to apply an `Action`" or "result of the `Action`". All cross-contract communication is done through receipts. An action may result in one or more receipts. The Blockchain may be seen as a series of Transactions, but it's also a series of Receipts. 
 
 :::tip
 You can use <a href="https://nearblocks.io/">NEAR Blockchain Explorer</a> to inspect and see all actions and receipts related to a transaction.
 :::
 
 
-An in depth documentation about transactions can be found in [NEAR Protocol Specifications (nomicon.io)](https://nomicon.io/RuntimeSpec/Transactions).
-On this page we give an overview of the important aspects of transactions on NEAR.
+In-depth documentation about transactions can be found in [NEAR Protocol Specifications (nomicon.io)](https://nomicon.io/RuntimeSpec/Transactions).
+This page provides an overview of the important aspects of transactions on NEAR.
 
 ## Transaction {#transaction}
 
@@ -47,9 +47,9 @@ You can find more about the technical details of `Action`s in the [NEAR nomicon]
 
 ## Receipt {#receipt}
 
-A `Receipt` is the only actionable object in the system. Therefore, when we talk about "processing a transaction" on the NEAR platform, this eventually means "applying receipts" at some point.
+A `Receipt` is the only actionable object in the system. Therefore, discussing "processing a transaction" on the NEAR platform, eventually means "applying receipts" at some point.
 
-A good mental model is to think of a `Receipt` as a paid message to be executed at the destination (`receiver`). And a `Transaction` is an externally issued request to create the `Receipt` (there is a 1-to-1 relationship).
+A good mental model is to think of a `Receipt` as a paid message to be executed at the destination (`receiver`). While a `Transaction` is an externally issued request to create the `Receipt` (there is a 1-to-1 relationship).
 
 There are several ways of creating `Receipts`:
 
@@ -63,17 +63,17 @@ You can find more about the technical details of `Receipts` in the [NEAR nomicon
 
 Since transactions are converted to receipts before they are applied, it suffices to talk about receipt atomicity.
 Receipt execution is atomic, meaning that either all the actions are successfully executed or none are.
-However, one caveat is that a function call transaction, unlike other transactions, can spawn an indefinite amount of receipts, and while each receipt is atomic, the success or failure of one receipt doesn't necessarily affect the status of other receipts spawned by the same transaction.
+However, it's important to remember that a function call transaction can create many receipts, unlike other transactions. Each receipt is independent, and the success or failure of one doesn't always impact the others that come from the same transaction.
 
 :::info
-  When designing a smart contract, you should always consider the asynchronous nature of NEAR Protocol.
+  When designing a smart contract, you should always consider the asynchronous nature of the NEAR Protocol.
 :::
 
 ## Transaction Status {#transaction-status}
 
 You can query the status of a transaction through [RPC API](/api/rpc/setup) or [NEAR CLI](https://docs.near.org/tools/near-cli#near-tx-status). An example of the query result looks like this:
 
-```js
+```json
 {
   status: { SuccessValue: '' },
   transaction: {
@@ -146,9 +146,9 @@ The `status` field appears at:
 
 The `status` is an object with a single key, one of the following four:
 
-- `status: { SuccessValue: 'val or empty'}` - the receipt or transaction has been successfully executed. If it's the result of a function call receipt, the value is the return value of the function, otherwise the value is empty.
-- `status: { SuccessReceiptId: 'id_of_generated_receipt' }` - either a transaction has been successfully converted to a receipt, or a receipt is successfully processed and generated another receipt. The value of this key is the id of the newly generated receipt.
-- `status: { Failure: {} }'` - transaction or receipt has failed during execution. The value will include error reason.
+- `status: { SuccessValue: 'val or empty'}` - the receipt or transaction has been successfully executed. If it's the result of a function call receipt, the value is the return value of the function, otherwise, the value is empty.
+- `status: { SuccessReceiptId: 'id_of_generated_receipt' }` - either a transaction has been successfully converted to a receipt, or a receipt is successfully processed and generated another receipt. The value of this key is the `id` of the newly generated receipt.
+- `status: { Failure: {} }'` - transaction or receipt has failed during execution. The value will include the error response.
 - `status: { Unknown: '' }'` - the transaction or receipt hasn't been processed yet.
 
 :::note
@@ -156,10 +156,10 @@ For receipts, `SuccessValue` and `SuccessReceiptId` come from the last action's 
 :::
 
 :::note
-For receipts, The last receipt in the list is the `refund` receipt. Refund receipts do not actually cost any `gas`, but they still count the gas towards the block gas. In this case, the refund receipt is `5m6D2DxLX3A59cAMZJmd6iTkYqL3QEE3Cr2FnXwzzvSr`.
+For receipts, The last receipt in the list is the `refund` receipt. Refund receipts do not cost any `gas`, but they still count the gas towards the block gas. In this case, the refund receipt is `5m6D2DxLX3A59cAMZJmd6iTkYqL3QEE3Cr2FnXwzzvSr`.
 :::
 
-The top-level `status` indicates whether all actions in the transaction have been successfully executed. However, one caveat is that the successful execution of the function call does not necessarily mean that the receipts spawned from the function call are all successfully executed.
+The top-level `status` indicates whether all actions in the transaction have been successfully executed. However, it's important to note that even if the function call is successfully executed, it doesn't guarantee that all the receipts generated from the function call will also be successfully executed.
 
 For example:
 
